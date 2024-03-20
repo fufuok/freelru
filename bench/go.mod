@@ -23,3 +23,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/sys v0.0.0-20221010170243-090e33056c14 // indirect
 )
+
+replace (
+	github.com/elastic/go-freelru v0.9.0 => ../
+)

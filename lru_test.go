@@ -61,15 +61,29 @@ func setupCache(t *testing.T, cache Cache[uint64, uint64], evictCounter *uint64)
 	return cache
 }
 
-func makeCache(t *testing.T, capacity uint32, evictCounter *uint64) Cache[uint64, uint64] {
+func makeCacheWithHasher(t *testing.T, capacity uint32, evictCounter *uint64) Cache[uint64, uint64] {
 	cache, err := New[uint64, uint64](capacity, hashUint64)
 	FatalIf(t, err != nil, "Failed to create LRU: %v", err)
 
 	return setupCache(t, cache, evictCounter)
 }
 
-func makeSyncedLRU(t *testing.T, capacity uint32, evictCounter *uint64) Cache[uint64, uint64] {
+func makeCache(t *testing.T, capacity uint32, evictCounter *uint64) Cache[uint64, uint64] {
+	cache, err := NewDefault[uint64, uint64](capacity)
+	FatalIf(t, err != nil, "Failed to create LRU: %v", err)
+
+	return setupCache(t, cache, evictCounter)
+}
+
+func makeSyncedLRUWithHasher(t *testing.T, capacity uint32, evictCounter *uint64) Cache[uint64, uint64] {
 	cache, err := NewSynced[uint64, uint64](capacity, hashUint64)
+	FatalIf(t, err != nil, "Failed to create SyncedLRU: %v", err)
+
+	return setupCache(t, cache, evictCounter)
+}
+
+func makeSyncedLRU(t *testing.T, capacity uint32, evictCounter *uint64) Cache[uint64, uint64] {
+	cache, err := NewSyncedDefault[uint64, uint64](capacity)
 	FatalIf(t, err != nil, "Failed to create SyncedLRU: %v", err)
 
 	return setupCache(t, cache, evictCounter)
@@ -80,6 +94,8 @@ func TestLRU(t *testing.T) {
 
 	evictCounter := uint64(0)
 	testCache(t, CAP, makeCache(t, CAP, &evictCounter), &evictCounter)
+	evictCounter = uint64(0)
+	testCache(t, CAP, makeCacheWithHasher(t, CAP, &evictCounter), &evictCounter)
 }
 
 func TestSyncedLRU(t *testing.T) {
@@ -87,6 +103,8 @@ func TestSyncedLRU(t *testing.T) {
 
 	evictCounter := uint64(0)
 	testCache(t, CAP, makeSyncedLRU(t, CAP, &evictCounter), &evictCounter)
+	evictCounter = uint64(0)
+	testCache(t, CAP, makeSyncedLRUWithHasher(t, CAP, &evictCounter), &evictCounter)
 }
 
 func testCache(t *testing.T, cAP uint64, cache Cache[uint64, uint64], evictCounter *uint64) {

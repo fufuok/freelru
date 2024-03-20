@@ -14,7 +14,7 @@ import (
 func TestShardedRaceCondition(t *testing.T) {
 	const CAP = 4
 
-	lru, err := NewSharded[uint64, int](CAP, hashUint64)
+	lru, err := NewShardedDefault[uint64, int](CAP)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -49,14 +49,14 @@ func TestShardedRaceCondition(t *testing.T) {
 }
 
 func TestShardedLRUMetrics(t *testing.T) {
-	cache, _ := NewSharded[uint64, uint64](1, hashUint64)
+	cache, _ := NewShardedDefault[uint64, uint64](1)
 	testMetrics(t, cache)
 }
 
 func TestStressWithLifetime(t *testing.T) {
 	const CAP = 1024
 
-	lru, err := NewSharded[string, int](CAP, hashString)
+	lru, err := NewShardedDefault[string, int](CAP)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -90,13 +90,4 @@ func TestStressWithLifetime(t *testing.T) {
 	}
 
 	wg.Wait()
-}
-
-// hashString is a simple but sufficient string hash function.
-func hashString(s string) uint32 {
-	var h uint32
-	for i := 0; i < len(s); i++ {
-		h = h*31 + uint32(s[i])
-	}
-	return h
 }

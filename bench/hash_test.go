@@ -6,7 +6,16 @@ import (
 
 	"github.com/cespare/xxhash/v2"
 	"github.com/zeebo/xxh3"
+
+	"github.com/elastic/go-freelru"
 )
+
+func BenchmarkHashInt_DefaultHash(b *testing.B) {
+	hasher := freelru.MakeHasher[int]()
+	for i := 0; i < b.N; i++ {
+		_ = hasher(i)
+	}
+}
 
 func BenchmarkHashInt_MapHash(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -55,6 +64,13 @@ func BenchmarkHashInt_XXH3HASH(b *testing.B) {
 }
 
 var testString = "test123 dlfksdlföls sdfsdlskdg sgksgjdgs gdkfggk"
+
+func BenchmarkHashString_DefaultHash(b *testing.B) {
+	hasher := freelru.MakeHasher[string]()
+	for i := 0; i < b.N; i++ {
+		_ = hasher(testString)
+	}
+}
 
 func BenchmarkHashString_MapHash(b *testing.B) {
 	for i := 0; i < b.N; i++ {

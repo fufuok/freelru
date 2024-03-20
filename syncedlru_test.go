@@ -11,7 +11,7 @@ import (
 func TestSyncedRaceCondition(t *testing.T) {
 	const CAP = 4
 
-	lru, err := NewSynced[uint64, int](CAP, hashUint64)
+	lru, err := NewSyncedDefault[uint64, int](CAP)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -46,6 +46,6 @@ func TestSyncedRaceCondition(t *testing.T) {
 }
 
 func TestSyncedLRUMetrics(t *testing.T) {
-	cache, _ := NewSynced[uint64, uint64](1, hashUint64)
+	cache, _ := NewSyncedDefault[uint64, uint64](1)
 	testMetrics(t, cache)
 }
