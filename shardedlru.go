@@ -256,6 +256,8 @@ func addMetrics(dst *Metrics, src Metrics) {
 	dst.Removals += src.Removals
 	dst.Hits += src.Hits
 	dst.Misses += src.Misses
+	dst.Capacity += src.Capacity
+	dst.Lifetime = src.Lifetime
 }
 
 // just used for debugging

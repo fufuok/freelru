@@ -320,6 +320,11 @@ func TestSyncedLRUAdd(t *testing.T) {
 func TestLRUMetrics(t *testing.T) {
 	cache := makeCache(t, 1, nil)
 	testMetrics(t, cache)
+
+	lru, _ := NewDefault[string, struct{}](3, time.Second*3)
+	m := lru.Metrics()
+	FatalIf(t, m.Capacity != 3, "Unexpected capacity: %d (!= %d)", m.Capacity, 1)
+	FatalIf(t, m.Lifetime != "3s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "3s")
 }
 
 func testMetrics(t *testing.T, cache Cache[uint64, uint64]) {
@@ -336,4 +341,6 @@ func testMetrics(t *testing.T, cache Cache[uint64, uint64]) {
 	FatalIf(t, m.Evictions != 1, "Unexpected evictions: %d (!= %d)", m.Evictions, 1)
 	FatalIf(t, m.Removals != 1, "Unexpected evictions: %d (!= %d)", m.Removals, 1)
 	FatalIf(t, m.Collisions != 0, "Unexpected collisions: %d (!= %d)", m.Collisions, 0)
+	FatalIf(t, m.Capacity != 1, "Unexpected capacity: %d (!= %d)", m.Capacity, 1)
+	FatalIf(t, m.Lifetime != "", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "")
 }

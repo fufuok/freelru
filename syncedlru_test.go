@@ -4,6 +4,7 @@ package freelru
 import (
 	"sync"
 	"testing"
+	"time"
 )
 
 // TestSyncedRaceCondition tests that the synced LRU is safe to use concurrently.
@@ -48,4 +49,9 @@ func TestSyncedRaceCondition(t *testing.T) {
 func TestSyncedLRUMetrics(t *testing.T) {
 	cache, _ := NewSyncedDefault[uint64, uint64](1)
 	testMetrics(t, cache)
+
+	lru, _ := NewSyncedDefault[string, struct{}](3, time.Second*3)
+	m := lru.Metrics()
+	FatalIf(t, m.Capacity != 3, "Unexpected capacity: %d (!= %d)", m.Capacity, 1)
+	FatalIf(t, m.Lifetime != "3s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "3s")
 }

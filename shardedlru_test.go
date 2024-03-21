@@ -51,6 +51,11 @@ func TestShardedRaceCondition(t *testing.T) {
 func TestShardedLRUMetrics(t *testing.T) {
 	cache, _ := NewShardedDefault[uint64, uint64](1)
 	testMetrics(t, cache)
+
+	lru, _ := NewShardedDefault[string, struct{}](3, time.Second*3)
+	m := lru.Metrics()
+	FatalIf(t, m.Capacity != 3, "Unexpected capacity: %d (!= %d)", m.Capacity, 1)
+	FatalIf(t, m.Lifetime != "3s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "3s")
 }
 
 func TestStressWithLifetime(t *testing.T) {

@@ -87,6 +87,8 @@ type Metrics struct {
 	Removals   uint64
 	Hits       uint64
 	Misses     uint64
+	Capacity   uint32
+	Lifetime   string
 }
 
 var _ Cache[int, int] = (*LRU[int, int])(nil)
@@ -95,6 +97,7 @@ var _ Cache[int, int] = (*LRU[int, int])(nil)
 // Lifetime 0 means "forever".
 func (lru *LRU[K, V]) SetLifetime(lifetime time.Duration) {
 	lru.lifetime = lifetime
+	lru.metrics.Lifetime = lifetime.String()
 }
 
 // SetOnEvict sets the OnEvict callback function.
@@ -145,6 +148,7 @@ func initLRU[K comparable, V any](lru *LRU[K, V], capacity, size uint32, hash Ha
 	lru.hash = hash
 	lru.buckets = buckets
 	lru.elements = elements
+	lru.metrics.Capacity = capacity
 
 	// If the size is 2^N, we can avoid costly divisions.
 	if bits.OnesCount32(lru.size) == 1 {
