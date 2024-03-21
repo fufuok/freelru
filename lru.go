@@ -114,8 +114,7 @@ func New[K comparable, V any](capacity uint32, hash HashKeyCallback[K]) (*LRU[K,
 // A size greater than the capacity increases memory consumption and decreases the CPU consumption
 // by reducing the chance of collisions.
 // Size must not be lower than the capacity.
-func NewWithSize[K comparable, V any](capacity, size uint32, hash HashKeyCallback[K]) (
-	*LRU[K, V], error) {
+func NewWithSize[K comparable, V any](capacity, size uint32, hash HashKeyCallback[K]) (*LRU[K, V], error) {
 	if capacity == 0 {
 		return nil, errors.New("capacity must be positive")
 	}
@@ -139,7 +138,8 @@ func NewWithSize[K comparable, V any](capacity, size uint32, hash HashKeyCallbac
 }
 
 func initLRU[K comparable, V any](lru *LRU[K, V], capacity, size uint32, hash HashKeyCallback[K],
-	buckets []uint32, elements []element[K, V]) {
+	buckets []uint32, elements []element[K, V],
+) {
 	lru.cap = capacity
 	lru.size = size
 	lru.hash = hash

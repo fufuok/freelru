@@ -32,7 +32,8 @@ func NewSyncedDefault[K comparable, V any](capacity uint32, lifetime ...time.Dur
 }
 
 func NewSyncedWithSizeDefault[K comparable, V any](capacity, size uint32, lifetime ...time.Duration) (
-	*SyncedLRU[K, V], error) {
+	*SyncedLRU[K, V], error,
+) {
 	c, err := NewSyncedWithSize[K, V](capacity, size, MakeHasher[K]())
 	if err != nil {
 		return nil, err
@@ -56,7 +57,8 @@ func NewShardedDefault[K comparable, V any](capacity uint32, lifetime ...time.Du
 }
 
 func NewShardedWithSizeDefault[K comparable, V any](shards, capacity, size uint32, lifetime ...time.Duration) (
-	*ShardedLRU[K, V], error) {
+	*ShardedLRU[K, V], error,
+) {
 	c, err := NewShardedWithSize[K, V](shards, capacity, size, MakeHasher[K]())
 	if err != nil {
 		return nil, err

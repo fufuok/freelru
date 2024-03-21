@@ -57,7 +57,8 @@ func NewSharded[K comparable, V any](capacity uint32, hash HashKeyCallback[K]) (
 }
 
 func NewShardedWithSize[K comparable, V any](shards, capacity, size uint32, hash HashKeyCallback[K]) (
-	*ShardedLRU[K, V], error) {
+	*ShardedLRU[K, V], error,
+) {
 	if capacity == 0 {
 		return nil, errors.New("capacity must be positive")
 	}
