@@ -56,11 +56,10 @@ func TestShardedLRUMetrics(t *testing.T) {
 func TestStressWithLifetime(t *testing.T) {
 	const CAP = 1024
 
-	lru, err := NewShardedDefault[string, int](CAP)
+	lru, err := NewShardedDefault[string, int](CAP, time.Millisecond*10)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	lru.SetLifetime(time.Millisecond * 10)
 
 	const NTHREADS = 10
 	const RUNS = 1000
