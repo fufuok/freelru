@@ -28,10 +28,11 @@ import (
 	cloudflare "github.com/cloudflare/golibs/lrucache"
 	"github.com/coocood/freecache"
 	"github.com/dgraph-io/ristretto"
-	freelru "github.com/elastic/go-freelru"
 	hashicorp "github.com/hashicorp/golang-lru/v2"
 	oracaman "github.com/orcaman/concurrent-map/v2"
 	phuslu "github.com/phuslu/lru"
+
+	"github.com/elastic/go-freelru"
 )
 
 func runParallelSyncedFreeLRUAdd[K comparable, V any](b *testing.B) {
@@ -78,6 +79,28 @@ func runParallelShardedFreeLRUAdd[K comparable, V any](b *testing.B) {
 	})
 }
 
+func runParallelShardedDefaultFreeLRUAdd[K comparable, V any](b *testing.B) {
+	lru, err := freelru.NewShardedDefault[K, V](CAP)
+	if err != nil {
+		b.Fatalf("err: %v", err)
+	}
+
+	var val V
+	keys := getParallelKeys[K]()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for i := rand.Intn(len(keys)); pb.Next(); i++ {
+			if i >= len(keys) {
+				i = 0
+			}
+			lru.Add(keys[i], val)
+		}
+	})
+}
+
 func BenchmarkParallelSyncedFreeLRUAdd_int_int(b *testing.B) {
 	runParallelSyncedFreeLRUAdd[int, int](b)
 }
@@ -92,6 +115,14 @@ func BenchmarkParallelShardedFreeLRUAdd_int_int(b *testing.B) {
 
 func BenchmarkParallelShardedFreeLRUAdd_int_int128(b *testing.B) {
 	runParallelShardedFreeLRUAdd[int, int128](b)
+}
+
+func BenchmarkParallelShardedDefaultFreeLRUAdd_int_int(b *testing.B) {
+	runParallelShardedDefaultFreeLRUAdd[int, int](b)
+}
+
+func BenchmarkParallelShardedFreeDefaultLRUAdd_int_int128(b *testing.B) {
+	runParallelShardedDefaultFreeLRUAdd[int, int128](b)
 }
 
 func BenchmarkParallelFreeCacheAdd_int_int(b *testing.B) {

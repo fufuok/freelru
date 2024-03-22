@@ -50,8 +50,8 @@ func TestSyncedLRUMetrics(t *testing.T) {
 	cache, _ := NewSyncedDefault[uint64, uint64](1)
 	testMetrics(t, cache)
 
-	lru, _ := NewSyncedDefault[string, struct{}](3, time.Second*3)
+	lru, _ := NewSyncedDefault[string, struct{}](5, time.Second*5)
 	m := lru.Metrics()
-	FatalIf(t, m.Capacity != 3, "Unexpected capacity: %d (!= %d)", m.Capacity, 1)
-	FatalIf(t, m.Lifetime != "3s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "3s")
+	FatalIf(t, m.Capacity != 5, "Unexpected capacity: %d (!= %d)", m.Capacity, 5)
+	FatalIf(t, m.Lifetime != "5s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "5s")
 }

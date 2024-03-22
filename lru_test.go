@@ -107,7 +107,7 @@ func TestSyncedLRU(t *testing.T) {
 	testCache(t, CAP, makeSyncedLRUWithHasher(t, CAP, &evictCounter), &evictCounter)
 }
 
-func testCache(t *testing.T, cAP uint64, cache Cache[uint64, uint64], evictCounter *uint64) {
+func testCache(t *testing.T, cAP uint64, cache Cache[uint64, uint64], evictCounter *uint64) { //nolint:unparam
 	for i := uint64(0); i < cAP*2; i++ {
 		cache.Add(i, i+1)
 	}
@@ -323,7 +323,7 @@ func TestLRUMetrics(t *testing.T) {
 
 	lru, _ := NewDefault[string, struct{}](3, time.Second*3)
 	m := lru.Metrics()
-	FatalIf(t, m.Capacity != 3, "Unexpected capacity: %d (!= %d)", m.Capacity, 1)
+	FatalIf(t, m.Capacity != 3, "Unexpected capacity: %d (!= %d)", m.Capacity, 3)
 	FatalIf(t, m.Lifetime != "3s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "3s")
 }
 

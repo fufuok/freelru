@@ -30,11 +30,15 @@ func TestMakeHashFunc(t *testing.T) {
 		}
 	}
 
-	if hashString("foo") != hashString("foo") {
+	a := hashString("foo")
+	b := hashString("foo")
+	if a != b {
 		t.Error("hashString is not deterministic")
 	}
 
-	if hashUser(User{Name: "Ivan", City: "Sofia"}) != hashUser(User{Name: "Ivan", City: "Sofia"}) {
+	ua := hashUser(User{Name: "Ivan", City: "Sofia"})
+	ub := hashUser(User{Name: "Ivan", City: "Sofia"})
+	if ua != ub {
 		t.Error("hashUser is not deterministic")
 	}
 }
