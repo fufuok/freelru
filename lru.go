@@ -89,6 +89,7 @@ type Metrics struct {
 	Misses     uint64
 	Capacity   uint32
 	Lifetime   string
+	Len        int
 }
 
 var _ Cache[int, int] = (*LRU[int, int])(nil)
@@ -148,7 +149,9 @@ func initLRU[K comparable, V any](lru *LRU[K, V], capacity, size uint32, hash Ha
 	lru.hash = hash
 	lru.buckets = buckets
 	lru.elements = elements
+	lru.lifetime = 0
 	lru.metrics.Capacity = capacity
+	lru.metrics.Lifetime = lru.lifetime.String()
 
 	// If the size is 2^N, we can avoid costly divisions.
 	if bits.OnesCount32(lru.size) == 1 {
@@ -506,18 +509,25 @@ func (lru *LRU[K, V]) Purge() {
 	}
 
 	lru.len = 0
-	lru.metrics = Metrics{}
+	lru.metrics = Metrics{
+		Capacity: lru.cap,
+		Lifetime: lru.lifetime.String(),
+	}
 }
 
 // Metrics returns the metrics of the cache.
 func (lru *LRU[K, V]) Metrics() Metrics {
+	lru.metrics.Len = lru.Len()
 	return lru.metrics
 }
 
 // ResetMetrics resets the metrics of the cache and returns the previous state.
 func (lru *LRU[K, V]) ResetMetrics() Metrics {
 	metrics := lru.metrics
-	lru.metrics = Metrics{}
+	lru.metrics = Metrics{
+		Capacity: lru.cap,
+		Lifetime: lru.lifetime.String(),
+	}
 	return metrics
 }
 

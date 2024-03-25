@@ -54,4 +54,9 @@ func TestSyncedLRUMetrics(t *testing.T) {
 	m := lru.Metrics()
 	FatalIf(t, m.Capacity != 5, "Unexpected capacity: %d (!= %d)", m.Capacity, 5)
 	FatalIf(t, m.Lifetime != "5s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "5s")
+
+	lru.ResetMetrics()
+	m = lru.Metrics()
+	FatalIf(t, m.Capacity != 5, "Unexpected capacity: %d (!= %d)", m.Capacity, 5)
+	FatalIf(t, m.Lifetime != "5s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "5s")
 }

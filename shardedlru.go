@@ -258,6 +258,7 @@ func addMetrics(dst *Metrics, src Metrics) {
 	dst.Misses += src.Misses
 	dst.Capacity += src.Capacity
 	dst.Lifetime = src.Lifetime
+	dst.Len += src.Len
 }
 
 // just used for debugging

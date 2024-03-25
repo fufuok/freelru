@@ -325,6 +325,11 @@ func TestLRUMetrics(t *testing.T) {
 	m := lru.Metrics()
 	FatalIf(t, m.Capacity != 3, "Unexpected capacity: %d (!= %d)", m.Capacity, 3)
 	FatalIf(t, m.Lifetime != "3s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "3s")
+
+	lru.ResetMetrics()
+	m = lru.Metrics()
+	FatalIf(t, m.Capacity != 3, "Unexpected capacity: %d (!= %d)", m.Capacity, 3)
+	FatalIf(t, m.Lifetime != "3s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "3s")
 }
 
 func testMetrics(t *testing.T, cache Cache[uint64, uint64]) {
@@ -342,5 +347,22 @@ func testMetrics(t *testing.T, cache Cache[uint64, uint64]) {
 	FatalIf(t, m.Removals != 1, "Unexpected evictions: %d (!= %d)", m.Removals, 1)
 	FatalIf(t, m.Collisions != 0, "Unexpected collisions: %d (!= %d)", m.Collisions, 0)
 	FatalIf(t, m.Capacity != 1, "Unexpected capacity: %d (!= %d)", m.Capacity, 1)
-	FatalIf(t, m.Lifetime != "", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "")
+	FatalIf(t, m.Lifetime != "0s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "0s")
+	FatalIf(t, m.Len != 0, "Unexpected len: %d (!= %d)", m.Len, 0)
+
+	cache.Add(4, 4)
+	m = cache.Metrics()
+	FatalIf(t, m.Len != 1, "Unexpected len: %d (!= %d)", m.Len, 1)
+
+	cache.Purge()
+	m = cache.Metrics()
+	FatalIf(t, m.Inserts != 0, "Unexpected inserts: %d (!= %d)", m.Inserts, 0)
+	FatalIf(t, m.Hits != 0, "Unexpected hits: %d (!= %d)", m.Hits, 0)
+	FatalIf(t, m.Misses != 0, "Unexpected misses: %d (!= %d)", m.Misses, 0)
+	FatalIf(t, m.Evictions != 0, "Unexpected evictions: %d (!= %d)", m.Evictions, 0)
+	FatalIf(t, m.Removals != 0, "Unexpected evictions: %d (!= %d)", m.Removals, 0)
+	FatalIf(t, m.Collisions != 0, "Unexpected collisions: %d (!= %d)", m.Collisions, 0)
+	FatalIf(t, m.Capacity != 1, "Unexpected capacity: %d (!= %d)", m.Capacity, 1)
+	FatalIf(t, m.Lifetime != "0s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "0s")
+	FatalIf(t, m.Len != 0, "Unexpected len: %d (!= %d)", m.Len, 0)
 }

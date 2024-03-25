@@ -56,6 +56,11 @@ func TestShardedLRUMetrics(t *testing.T) {
 	m := lru.Metrics()
 	FatalIf(t, m.Capacity != 7, "Unexpected capacity: %d (!= %d)", m.Capacity, 7)
 	FatalIf(t, m.Lifetime != "7s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "7s")
+
+	lru.ResetMetrics()
+	m = lru.Metrics()
+	FatalIf(t, m.Capacity != 7, "Unexpected capacity: %d (!= %d)", m.Capacity, 7)
+	FatalIf(t, m.Lifetime != "7s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "7s")
 }
 
 func TestStressWithLifetime(t *testing.T) {
