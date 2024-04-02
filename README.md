@@ -12,6 +12,37 @@ It performs better than other LRU implementations in the Go benchmarks provided.
 The API is simple in order to ease migrations from other LRU implementations.
 The function to calculate hashes from the keys needs to be provided by the caller.
 
+## ✨ Changelog
+
+- Add helper function with default hasher
+- Add more test cases
+- Add more fields to Metrics
+
+```go
+package freelru // import "github.com/fufuok/freelru"
+
+func MakeHasher[T comparable]() func(T) uint32
+type Cache[K comparable, V any] interface{ ... }
+type HashKeyCallback[K comparable] func(K) uint32
+type LRU[K comparable, V any] struct{ ... }
+    func New[K comparable, V any](capacity uint32, hash HashKeyCallback[K]) (*LRU[K, V], error)
+    func NewDefault[K comparable, V any](capacity uint32, lifetime ...time.Duration) (*LRU[K, V], error)
+    func NewWithSize[K comparable, V any](capacity, size uint32, hash HashKeyCallback[K]) (*LRU[K, V], error)
+    func NewWithSizeDefault[K comparable, V any](capacity, size uint32, lifetime ...time.Duration) (*LRU[K, V], error)
+type Metrics struct{ ... }
+type OnEvictCallback[K comparable, V any] func(K, V)
+type ShardedLRU[K comparable, V any] struct{ ... }
+    func NewSharded[K comparable, V any](capacity uint32, hash HashKeyCallback[K]) (*ShardedLRU[K, V], error)
+    func NewShardedDefault[K comparable, V any](capacity uint32, lifetime ...time.Duration) (*ShardedLRU[K, V], error)
+    func NewShardedWithSize[K comparable, V any](shards, capacity, size uint32, hash HashKeyCallback[K]) (*ShardedLRU[K, V], error)
+    func NewShardedWithSizeDefault[K comparable, V any](shards, capacity, size uint32, lifetime ...time.Duration) (*ShardedLRU[K, V], error)
+type SyncedLRU[K comparable, V any] struct{ ... }
+    func NewSynced[K comparable, V any](capacity uint32, hash HashKeyCallback[K]) (*SyncedLRU[K, V], error)
+    func NewSyncedDefault[K comparable, V any](capacity uint32, lifetime ...time.Duration) (*SyncedLRU[K, V], error)
+    func NewSyncedWithSize[K comparable, V any](capacity, size uint32, hash HashKeyCallback[K]) (*SyncedLRU[K, V], error)
+    func NewSyncedWithSizeDefault[K comparable, V any](capacity, size uint32, lifetime ...time.Duration) (*SyncedLRU[K, V], error)
+```
+
 ## `LRU`: Single-threaded LRU hashmap
 
 `LRU` is a single-threaded LRU hashmap implementation.
@@ -202,7 +233,7 @@ BenchmarkRistrettoAdd_int_string-20             10360814               107.4 ns/
 BenchmarkMapAdd_int_int-20                      35306983                46.29 ns/op            0 B/op          0 allocs/op
 BenchmarkMapAdd_int_int128-20                   30986126                45.16 ns/op            0 B/op          0 allocs/op
 BenchmarkMapAdd_string_uint64-20                28406497                49.35 ns/op            0 B/op          0 allocs/op
-```
+ ```
 (*)
 There is an interesting affect when using increasing number (0..N) as keys in combination with FNV1a().
 The number of collisions is strongly reduced here, thus the high performance.
