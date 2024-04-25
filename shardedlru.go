@@ -187,12 +187,27 @@ func (lru *ShardedLRU[K, V]) Contains(key K) (ok bool) {
 
 // Remove removes the key from the cache.
 // The return value indicates whether the key existed or not.
+// The evict function is being called if the key existed.
 func (lru *ShardedLRU[K, V]) Remove(key K) (removed bool) {
 	hash := lru.hash(key)
 	shard := (hash >> 16) & lru.mask
 
 	lru.mus[shard].Lock()
 	removed = lru.lrus[shard].remove(hash, key)
+	lru.mus[shard].Unlock()
+
+	return
+}
+
+// RemoveOldest removes the oldest entry from the cache.
+// Key, value and an indicator of whether the entry has been removed is returned.
+// The evict function is being called if the key existed.
+func (lru *ShardedLRU[K, V]) RemoveOldest() (key K, value V, removed bool) {
+	hash := lru.hash(key)
+	shard := (hash >> 16) & lru.mask
+
+	lru.mus[shard].Lock()
+	key, value, removed = lru.lrus[shard].RemoveOldest()
 	lru.mus[shard].Unlock()
 
 	return

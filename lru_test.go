@@ -180,6 +180,29 @@ func TestSyncedLRU_Remove(t *testing.T) {
 	FatalIf(t, cache.Len() != 0, "Unexpected # of entries: %d (!= %d)", cache.Len(), 0)
 }
 
+func TestLRU_RemoveOldest(t *testing.T) {
+	evictCounter := uint64(0)
+	cache := makeCache(t, 2, &evictCounter)
+	cache.Add(1, 2)
+	cache.Add(3, 4)
+
+	k, v, ok := cache.RemoveOldest()
+	FatalIf(t, !ok, "Failed to remove oldest entry")
+	FatalIf(t, k != 1, "Unexpected key=%d (!= %d)", k, 1)
+	FatalIf(t, v != 2, "Unexpected value: %d (!= %d)", v, 2)
+
+	k, v, ok = cache.RemoveOldest()
+	FatalIf(t, !ok, "Failed to remove oldest entry")
+	FatalIf(t, k != 3, "Unexpected key=%d (!= %d)", k, 3)
+	FatalIf(t, v != 4, "Unexpected value: %d (!= %d)", v, 4)
+
+	_, _, ok = cache.RemoveOldest()
+	FatalIf(t, ok, "Unexpectedly removing oldest entry was ok")
+
+	FatalIf(t, evictCounter != 2, "Unexpected # of evictions: %d (!= %d)", evictCounter, 2)
+	FatalIf(t, cache.Len() != 0, "Unexpected # of entries: %d (!= %d)", cache.Len(), 0)
+}
+
 func testCacheAddWithExpire(t *testing.T, cache Cache[uint64, uint64]) {
 	// check for LRU default lifetime + element specific override
 	cache.SetLifetime(100 * time.Millisecond)
