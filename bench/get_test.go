@@ -221,7 +221,7 @@ func BenchmarkParallelFreeCacheGet(b *testing.B) {
 }
 
 func BenchmarkRistrettoGet(b *testing.B) {
-	cache, err := ristretto.NewCache(&ristretto.Config{
+	cache, err := ristretto.NewCache(&ristretto.Config[int, int]{
 		NumCounters: CAP * 10, // number of keys to track frequency of.
 		MaxCost:     CAP,      // maximum cost of cache.
 		BufferItems: 64,       // number of keys per Get buffer.
@@ -243,7 +243,7 @@ func BenchmarkRistrettoGet(b *testing.B) {
 }
 
 func BenchmarkParallelRistrettoGet(b *testing.B) {
-	cache, err := ristretto.NewCache(&ristretto.Config{
+	cache, err := ristretto.NewCache(&ristretto.Config[int, int]{
 		NumCounters: CAP * 10, // number of keys to track frequency of.
 		MaxCost:     CAP,      // maximum cost of cache.
 		BufferItems: 64,       // number of keys per Get buffer.
@@ -329,7 +329,7 @@ func BenchmarkParallelBigCacheGet(b *testing.B) {
 }
 
 func BenchmarkPhusluGet(b *testing.B) {
-	cache := phuslu.New[int, int](CAP)
+	cache := phuslu.NewLRUCache[int, int](CAP)
 
 	for i := 0; i < CAP; i++ {
 		_, _ = cache.Set(intKeys[i], intKeys[i])
@@ -344,7 +344,7 @@ func BenchmarkPhusluGet(b *testing.B) {
 }
 
 func BenchmarkParallelPhusluGet(b *testing.B) {
-	cache := phuslu.New[int, int](CAP)
+	cache := phuslu.NewLRUCache[int, int](CAP)
 
 	for i := 0; i < CAP; i++ {
 		_, _ = cache.Set(intKeys[i], intKeys[i])

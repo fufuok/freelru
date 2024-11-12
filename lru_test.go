@@ -107,7 +107,7 @@ func TestSyncedLRU(t *testing.T) {
 	testCache(t, CAP, makeSyncedLRUWithHasher(t, CAP, &evictCounter), &evictCounter)
 }
 
-func testCache(t *testing.T, cAP uint64, cache Cache[uint64, uint64], evictCounter *uint64) { //nolint:unparam
+func testCache(t *testing.T, cAP uint64, cache Cache[uint64, uint64], evictCounter *uint64) {
 	for i := uint64(0); i < cAP*2; i++ {
 		cache.Add(i, i+1)
 	}
@@ -154,6 +154,19 @@ func TestSyncedLRU_Add(t *testing.T) {
 
 	FatalIf(t, cache.Add(1, 2) == true || evictCounter != 0, "Unexpected eviction")
 	FatalIf(t, cache.Add(3, 4) == false || evictCounter != 1, "Missing eviction")
+}
+
+func TestLRU_Purge(t *testing.T) {
+	evictCounter := uint64(0)
+	cache := makeCache(t, 3, &evictCounter)
+
+	FatalIf(t, cache.Add(1, 2) == true || evictCounter != 0, "Unexpected eviction")
+	FatalIf(t, cache.Add(3, 4) == true || evictCounter != 0, "Unexpected eviction")
+	FatalIf(t, cache.Add(4, 5) == true || evictCounter != 0, "Unexpected eviction")
+	FatalIf(t, cache.Len() != 3, "Unexpected length")
+
+	cache.Purge()
+	FatalIf(t, cache.Len() != 0, "Unexpected length")
 }
 
 func TestLRU_Remove(t *testing.T) {
@@ -218,9 +231,20 @@ func testCacheAddWithExpire(t *testing.T, cache Cache[uint64, uint64]) {
 	time.Sleep(100 * time.Millisecond)
 	_, ok = cache.Get(3)
 	FatalIf(t, ok, "Expected expiration did not happen")
+	FatalIf(t, cache.Len() != 0, "Cache not empty")
+
+	cache.Add(1, 2)
+	cache.Purge()
+	FatalIf(t, cache.Len() != 0, "Cache not empty")
+
+	cache.AddWithLifetime(1, 2, 100*time.Millisecond)
+	cache.PurgeExpired() // should be a no-op
+	FatalIf(t, cache.Len() != 1, "Expected PurgeExpired to be a no-op")
+	time.Sleep(101 * time.Millisecond)
+	cache.PurgeExpired()
+	FatalIf(t, cache.Len() != 0, "Cache not empty")
 
 	// check for element specific lifetime
-	cache.Purge()
 	cache.SetLifetime(0)
 	cache.AddWithLifetime(1, 2, 100*time.Millisecond)
 	_, ok = cache.Get(1)
@@ -373,7 +397,7 @@ func testMetrics(t *testing.T, cache Cache[uint64, uint64]) {
 	FatalIf(t, m.Lifetime != "0s", "Unexpected lifetime: %s (!= %s)", m.Lifetime, "0s")
 	FatalIf(t, m.Len != 0, "Unexpected len: %d (!= %d)", m.Len, 0)
 
-	cache.Add(4, 4)
+	cache.Add(4, 5)
 	m = cache.Metrics()
 	FatalIf(t, m.Len != 1, "Unexpected len: %d (!= %d)", m.Len, 1)
 

@@ -233,7 +233,7 @@ BenchmarkRistrettoAdd_int_string-20             10360814               107.4 ns/
 BenchmarkMapAdd_int_int-20                      35306983                46.29 ns/op            0 B/op          0 allocs/op
 BenchmarkMapAdd_int_int128-20                   30986126                45.16 ns/op            0 B/op          0 allocs/op
 BenchmarkMapAdd_string_uint64-20                28406497                49.35 ns/op            0 B/op          0 allocs/op
- ```
+```
 (*)
 There is an interesting affect when using increasing number (0..N) as keys in combination with FNV1a().
 The number of collisions is strongly reduced here, thus the high performance.
