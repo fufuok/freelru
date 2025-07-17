@@ -11,6 +11,10 @@ import (
 // Thanks to @puzpuzpuz for the idea in xsync.
 func MakeHasher[T comparable]() func(T) uint32 {
 	var zero T
+	if containsInterface(reflect.TypeOf(&zero).Elem()) {
+		panic("freelru: interface types require custom hash functions")
+	}
+
 	seed := makeSeed()
 	if reflect.TypeOf(&zero).Elem().Kind() == reflect.Interface {
 		return func(value T) uint32 {
@@ -24,6 +28,52 @@ func MakeHasher[T comparable]() func(T) uint32 {
 	return func(value T) uint32 {
 		return runtimeTypehash32(i.typ, unsafe.Pointer(&value), seed)
 	}
+}
+
+func containsInterface(t reflect.Type) bool {
+	visited := map[reflect.Type]bool{}
+	var check func(reflect.Type) bool
+	check = func(t reflect.Type) bool {
+		if t == nil {
+			return false
+		}
+		// Prevent recursion loops
+		if visited[t] {
+			return false
+		}
+		visited[t] = true
+
+		switch t.Kind() {
+		case reflect.Interface:
+			return true
+		case reflect.Ptr, reflect.Slice, reflect.Array, reflect.Chan:
+			return check(t.Elem())
+		case reflect.Map:
+			return check(t.Key()) || check(t.Elem())
+		case reflect.Struct:
+			for i := 0; i < t.NumField(); i++ {
+				if check(t.Field(i).Type) {
+					return true
+				}
+			}
+			return false
+		case reflect.Func:
+			for i := 0; i < t.NumIn(); i++ {
+				if check(t.In(i)) {
+					return true
+				}
+			}
+			for i := 0; i < t.NumOut(); i++ {
+				if check(t.Out(i)) {
+					return true
+				}
+			}
+			return false
+		default:
+			return false
+		}
+	}
+	return check(t)
 }
 
 // makeSeed creates a random seed.
