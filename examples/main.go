@@ -43,5 +43,5 @@ func main() {
 	fmt.Println(lru.Get(firstKey)) // 0 false
 
 	lru.PrintStats()
-	fmt.Printf("Metrics: %+v", lru.Metrics())
+	fmt.Printf("Metrics: %+v\n", lru.Metrics())
 }

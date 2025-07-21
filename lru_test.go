@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	// FNV-1a
+	// FNV-1a constants.
 	offset32 = uint32(2166136261)
 	prime32  = uint32(16777619)
 
@@ -262,6 +262,27 @@ func TestSyncedLRU_AddWithExpire(t *testing.T) {
 	testCacheAddWithExpire(t, makeSyncedLRU(t, 2, nil))
 }
 
+func testCacheAddWithRefresh(t *testing.T, cache Cache[uint64, uint64]) {
+	cache.AddWithLifetime(1, 2, 100*time.Millisecond)
+	cache.AddWithLifetime(2, 3, 100*time.Millisecond)
+	_, ok := cache.Get(1)
+	FatalIf(t, !ok, "Failed to get")
+
+	time.Sleep(101 * time.Millisecond)
+	_, ok = cache.GetAndRefresh(1, 0)
+	FatalIf(t, !ok, "Unexpected expiration")
+	_, ok = cache.GetAndRefresh(2, 0)
+	FatalIf(t, !ok, "Unexpected expiration")
+}
+
+func TestLRU_AddWithRefresh(t *testing.T) {
+	testCacheAddWithRefresh(t, makeCache(t, 2, nil))
+}
+
+func TestSyncedLRU_AddWithRefresh(t *testing.T) {
+	testCacheAddWithRefresh(t, makeSyncedLRU(t, 2, nil))
+}
+
 func TestLRUMatch(t *testing.T) {
 	testCacheMatch(t, makeCache(t, 2, nil), 128)
 }
@@ -287,7 +308,8 @@ func testCacheMatch(t *testing.T, cache Cache[uint64, uint64], cAP int) {
 		backup[i] = i
 
 		// ~33% chance to remove a random element
-		r := i - uint64(rand.Int()%(cAP*3)) // nolint:gosec
+		//nolint:gosec // weak random is okay for testing
+		r := i - uint64(rand.Int()%(cAP*3))
 		cache.Remove(r)
 
 		FatalIf(t, cache.Len() != len(backup), "Len does not match (%d vs %d)",
@@ -330,7 +352,7 @@ const count = 1000
 
 // GOGC=off go test -memprofile=mem.out -test.memprofilerate=1 -count 1 -run TestMapAdd
 // go tool pprof mem.out
-// (then check the top10)
+// (then check the top10).
 func TestMapAdd(_ *testing.T) {
 	cache := make(map[uint64]uint64, count)
 
@@ -342,7 +364,7 @@ func TestMapAdd(_ *testing.T) {
 
 // GOGC=off go test -memprofile=mem.out -test.memprofilerate=1 -count 1 -run TestLRUAdd
 // go tool pprof mem.out
-// (then check the top10)
+// (then check the top10).
 func TestLRUAdd(t *testing.T) {
 	cache := makeCache(t, count, nil)
 
@@ -354,7 +376,7 @@ func TestLRUAdd(t *testing.T) {
 
 // GOGC=off go test -memprofile=mem.out -test.memprofilerate=1 -count 1 -run TestSyncedLRUAdd
 // go tool pprof mem.out
-// (then check the top10)
+// (then check the top10).
 func TestSyncedLRUAdd(t *testing.T) {
 	cache := makeSyncedLRU(t, count, nil)
 

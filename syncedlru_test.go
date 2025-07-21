@@ -1,4 +1,4 @@
-// nolint: dupl
+// nolint:dupl // code duplication is ok for testing purposes
 package freelru
 
 import (
@@ -33,6 +33,7 @@ func TestSyncedRaceCondition(t *testing.T) {
 	call(func() { _ = lru.AddWithLifetime(1, 1, 0) })
 	call(func() { _ = lru.Add(1, 1) })
 	call(func() { _, _ = lru.Get(1) })
+	call(func() { _, _ = lru.GetAndRefresh(1, 0) })
 	call(func() { _, _ = lru.Peek(1) })
 	call(func() { _ = lru.Contains(1) })
 	call(func() { _ = lru.Remove(1) })

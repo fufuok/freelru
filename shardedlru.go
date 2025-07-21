@@ -56,6 +56,13 @@ func NewSharded[K comparable, V any](capacity uint32, hash HashKeyCallback[K]) (
 	return NewShardedWithSize[K, V](uint32(runtime.GOMAXPROCS(0)*16), capacity, size, hash)
 }
 
+// NewShardedWithSize constructs a sharded LRU with the given capacity, size and number of shards.
+// Sharding is used to reduce lock contention on high concurrency.
+// The hash function calculates a hash value from the keys.
+// A size greater than the capacity increases memory consumption and decreases CPU consumption
+// by reducing the chance of collisions.
+// The number of shards is set to the next power of two to avoid costly divisions for sharding.
+// Size must not be lower than the capacity.
 func NewShardedWithSize[K comparable, V any](shards, capacity, size uint32, hash HashKeyCallback[K]) (
 	*ShardedLRU[K, V], error,
 ) {
@@ -135,8 +142,9 @@ func (lru *ShardedLRU[K, V]) AddWithLifetime(key K, value V, lifetime time.Durat
 	return
 }
 
-// Add adds a key:value to the cache.
-// Returns true, true if key was updated and eviction occurred.
+// Add adds a key:value entry to the cache.
+// The lifetime of the entry is set to the default lifetime.
+// Returns true if an eviction occurred.
 func (lru *ShardedLRU[K, V]) Add(key K, value V) (evicted bool) {
 	hash := lru.hash(key)
 	shard := (hash >> 16) & lru.mask
@@ -158,6 +166,20 @@ func (lru *ShardedLRU[K, V]) Get(key K) (value V, ok bool) {
 
 	lru.mus[shard].Lock()
 	value, ok = lru.lrus[shard].get(hash, key)
+	lru.mus[shard].Unlock()
+
+	return
+}
+
+// GetAndRefresh returns the value associated with the key, setting it as the most
+// recently used item.
+// The lifetime of the found cache item is refreshed, even if it was already expired.
+func (lru *ShardedLRU[K, V]) GetAndRefresh(key K, lifetime time.Duration) (value V, ok bool) {
+	hash := lru.hash(key)
+	shard := (hash >> 16) & lru.mask
+
+	lru.mus[shard].Lock()
+	value, ok = lru.lrus[shard].getAndRefresh(hash, key, lifetime)
 	lru.mus[shard].Unlock()
 
 	return
@@ -305,6 +327,7 @@ func (lru *ShardedLRU[K, V]) dump() {
 	}
 }
 
+// PrintStats prints the statistics of the LRU cache.
 func (lru *ShardedLRU[K, V]) PrintStats() {
 	for shard := range lru.lrus {
 		fmt.Printf("Shard %d:\n", shard)

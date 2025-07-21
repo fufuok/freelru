@@ -107,7 +107,7 @@ func (lru *LRU[K, V]) SetLifetime(lifetime time.Duration) {
 // - when the cache is full and a new entry is added (oldest entry is evicted)
 // - when an entry is removed by Remove() or RemoveOldest()
 // - when an entry is recognized as expired
-// - when Purge() is called
+// - when Purge() is called.
 func (lru *LRU[K, V]) SetOnEvict(onEvict OnEvictCallback[K, V]) {
 	lru.onEvict = onEvict
 }
@@ -120,10 +120,12 @@ func New[K comparable, V any](capacity uint32, hash HashKeyCallback[K]) (*LRU[K,
 
 // NewWithSize constructs an LRU with the given capacity and size.
 // The hash function calculates a hash value from the keys.
-// A size greater than the capacity increases memory consumption and decreases the CPU consumption
+// A size greater than the capacity increases memory consumption and decreases CPU consumption
 // by reducing the chance of collisions.
 // Size must not be lower than the capacity.
-func NewWithSize[K comparable, V any](capacity, size uint32, hash HashKeyCallback[K]) (*LRU[K, V], error) {
+func NewWithSize[K comparable, V any](capacity, size uint32, hash HashKeyCallback[K]) (
+	*LRU[K, V], error,
+) {
 	if capacity == 0 {
 		return nil, errors.New("capacity must be positive")
 	}
@@ -174,7 +176,13 @@ func (lru *LRU[K, V]) hashToBucketPos(hash uint32) uint32 {
 	if lru.mask != 0 {
 		return hash & lru.mask
 	}
-	return hash % lru.size
+	return fastModulo(hash, lru.size)
+}
+
+// fastModulo calculates x % n without using the modulo operator (~4x faster).
+// Reference: https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
+func fastModulo(x, n uint32) uint32 {
+	return uint32((uint64(x) * uint64(n)) >> 32)
 }
 
 // hashToPos converts a key into a position in the elements array.
@@ -295,7 +303,7 @@ func expire(lifetime time.Duration) int64 {
 	return now() + lifetime.Milliseconds()
 }
 
-// clearKeyAndValue clears stale data to avoid memory leaks
+// clearKeyAndValue clears stale data to avoid memory leaks.
 func (lru *LRU[K, V]) clearKeyAndValue(pos uint32) {
 	lru.elements[pos].key = lru.emptyKey
 	lru.elements[pos].value = lru.emptyValue
@@ -314,6 +322,26 @@ func (lru *LRU[K, V]) findKey(hash uint32, key K) (uint32, bool) {
 				lru.removeAt(pos)
 				return emptyBucket, false
 			}
+			return pos, true
+		}
+
+		pos = lru.elements[pos].nextBucket
+		if pos == startPos {
+			// Key not found
+			return emptyBucket, false
+		}
+	}
+}
+
+func (lru *LRU[K, V]) findKeyNoExpire(hash uint32, key K) (uint32, bool) {
+	_, startPos := lru.hashToPos(hash)
+	if startPos == emptyBucket {
+		return emptyBucket, false
+	}
+
+	pos := startPos
+	for {
+		if key == lru.elements[pos].key {
 			return pos, true
 		}
 
@@ -416,8 +444,8 @@ func (lru *LRU[K, V]) addWithLifetime(hash uint32, key K, value V, lifetime time
 	return evicted
 }
 
-// Add adds a key:value to the cache.
-// Returns true, true if key was updated and eviction occurred.
+// Add adds a key:value entry to the cache with the configured lifetime of the LRU.
+// Returns true if an eviction occurred.
 func (lru *LRU[K, V]) Add(key K, value V) (evicted bool) {
 	return lru.addWithLifetime(lru.hash(key), key, value, lru.lifetime)
 }
@@ -441,6 +469,28 @@ func (lru *LRU[K, V]) get(hash uint32, key K) (value V, ok bool) {
 			lru.setHead(pos)
 		}
 		lru.metrics.Hits++
+		return lru.elements[pos].value, ok
+	}
+
+	lru.metrics.Misses++
+	return
+}
+
+// GetAndRefresh returns the value associated with the key, setting it as the most
+// recently used item.
+// The lifetime of the found cache item is refreshed, even if it was already expired.
+func (lru *LRU[K, V]) GetAndRefresh(key K, lifetime time.Duration) (V, bool) {
+	return lru.getAndRefresh(lru.hash(key), key, lifetime)
+}
+
+func (lru *LRU[K, V]) getAndRefresh(hash uint32, key K, lifetime time.Duration) (value V, ok bool) {
+	if pos, ok := lru.findKeyNoExpire(hash, key); ok {
+		if pos != lru.head {
+			lru.unlinkElement(pos)
+			lru.setHead(pos)
+		}
+		lru.metrics.Hits++
+		lru.elements[pos].expire = expire(lifetime)
 		return lru.elements[pos].value, ok
 	}
 
@@ -482,7 +532,7 @@ func (lru *LRU[K, V]) Remove(key K) (removed bool) {
 }
 
 func (lru *LRU[K, V]) remove(hash uint32, key K) (removed bool) {
-	if pos, ok := lru.findKey(hash, key); ok {
+	if pos, ok := lru.findKeyNoExpire(hash, key); ok {
 		lru.removeAt(pos)
 		return ok
 	}
@@ -598,6 +648,7 @@ func (lru *LRU[K, V]) dump() {
 	}
 }
 
+// PrintStats prints the statistics of the LRU cache.
 func (lru *LRU[K, V]) PrintStats() {
 	m := &lru.metrics
 	fmt.Printf("Inserts: %d Collisions: %d (%.2f%%) Evictions: %d Removals: %d Hits: %d (%.2f%%) Misses: %d\n",

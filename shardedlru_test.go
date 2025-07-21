@@ -1,4 +1,4 @@
-// nolint: dupl
+// nolint:dupl // code duplication is ok for testing purposes
 package freelru
 
 import (
@@ -35,6 +35,7 @@ func TestShardedRaceCondition(t *testing.T) {
 	call(func() { _ = lru.AddWithLifetime(1, 1, 0) })
 	call(func() { _ = lru.Add(1, 1) })
 	call(func() { _, _ = lru.Get(1) })
+	call(func() { _, _ = lru.GetAndRefresh(1, 0) })
 	call(func() { _, _ = lru.Peek(1) })
 	call(func() { _ = lru.Contains(1) })
 	call(func() { _ = lru.Remove(1) })
@@ -83,7 +84,8 @@ func TestStressWithLifetime(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			for i := 0; i < RUNS; i++ {
-				lru.Add(fmt.Sprintf("key-%d", rand.Int()%1000), rand.Int()) //nolint:gosec
+				//nolint:gosec // weak random is okay for testing
+				lru.Add(fmt.Sprintf("key-%d", rand.Int()%1000), rand.Int())
 				time.Sleep(time.Millisecond * 1)
 			}
 			wg.Done()
@@ -94,7 +96,8 @@ func TestStressWithLifetime(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			for i := 0; i < RUNS; i++ {
-				_, _ = lru.Get(fmt.Sprintf("key-%d", rand.Int()%1000)) //nolint:gosec
+				//nolint:gosec // weak random is okay for testing
+				_, _ = lru.Get(fmt.Sprintf("key-%d", rand.Int()%1000))
 				time.Sleep(time.Millisecond * 1)
 			}
 			wg.Done()
